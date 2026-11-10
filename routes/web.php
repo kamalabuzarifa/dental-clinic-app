@@ -14,7 +14,12 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Dentist\DentistDashboardController;
 use App\Http\Controllers\Patient\PatientDashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Receptionist\ReceptionistAppointmentController;
 use App\Http\Controllers\Receptionist\ReceptionistDashboardController;
+use App\Http\Controllers\Receptionist\ReceptionistNotificationController;
+use App\Http\Controllers\Receptionist\ReceptionistPatientController;
+use App\Http\Controllers\Receptionist\ReceptionistProfileController;
+use App\Http\Controllers\Receptionist\ReceptionistSearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,9 +74,25 @@ Route::middleware(['auth', 'role:dentist'])->prefix('dentist')->as('dentist.')->
 */
 Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->as('receptionist.')->group(function () {
     Route::get('/dashboard', [ReceptionistDashboardController::class, 'index'])->name('dashboard');
-    Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
-    Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
-    Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+    Route::get('/search', [ReceptionistSearchController::class, 'search'])->name('search');
+
+    // Patients Management
+    Route::resource('patients', ReceptionistPatientController::class);
+
+    // Appointments Management
+    Route::get('/appointments/calendar', [ReceptionistAppointmentController::class, 'calendar'])->name('appointments.calendar');
+    Route::resource('appointments', ReceptionistAppointmentController::class)->except(['show']);
+    Route::patch('/appointments/{appointment}/status', [ReceptionistAppointmentController::class, 'updateStatus'])->name('appointments.status');
+    Route::patch('/appointments/{appointment}/cancel', [ReceptionistAppointmentController::class, 'cancel'])->name('appointments.cancel');
+
+    // Notifications Center
+    Route::get('/notifications', [ReceptionistNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [ReceptionistNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/{id}/read', [ReceptionistNotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    // Personal Profile
+    Route::get('/profile', [ReceptionistProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ReceptionistProfileController::class, 'update'])->name('profile.update');
 });
 
 /*

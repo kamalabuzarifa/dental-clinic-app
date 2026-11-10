@@ -2,55 +2,70 @@
 
 namespace App\Http\Controllers\Receptionist;
 
+use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\User;
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ReceptionistDashboardController extends Controller
 {
     /**
-     * Display receptionist dashboard with daily schedule and all appointments.
+     * Display the receptionist dashboard with real-time clinic metrics,
+     * today's schedule, latest bookings, and quick operational actions.
      */
     public function index(Request $request): View
     {
-        $selectedDate = $request->input('date', now()->toDateString());
+        $today = Carbon::today()->toDateString();
+        $selectedDate = $request->input('date', $today);
 
-        // Appointments for the selected date
+        // 1. Core KPIs & Real Statistics
+        $stats = [
+            'today_total'          => Appointment::whereDate('appointment_date', $today)->count(),
+            'today_confirmed'      => Appointment::whereDate('appointment_date', $today)->where('status', 'confirmed')->count(),
+            'today_pending'        => Appointment::whereDate('appointment_date', $today)->where('status', 'pending')->count(),
+            'today_completed'      => Appointment::whereDate('appointment_date', $today)->where('status', 'completed')->count(),
+            'upcoming_total'       => Appointment::whereDate('appointment_date', '>', $today)->whereNotIn('status', ['cancelled'])->count(),
+            'total_patients'       => User::where('role', 'patient')->count(),
+            'needs_followup_count' => Appointment::where('status', 'pending')->whereDate('appointment_date', '<=', $today)->count(),
+        ];
+
+        // 2. Schedule for the selected date
         $dailyAppointments = Appointment::with(['patient', 'dentist', 'service'])
             ->whereDate('appointment_date', $selectedDate)
             ->orderBy('start_time', 'asc')
             ->get();
 
-        // Recent / Upcoming general appointments
-        $recentAppointments = Appointment::with(['patient', 'dentist', 'service'])
-            ->whereDate('appointment_date', '>=', now()->toDateString())
-            ->orderBy('appointment_date', 'asc')
-            ->orderBy('start_time', 'asc')
-            ->take(20)
+        // 3. Latest bookings added across clinic
+        $latestAppointments = Appointment::with(['patient', 'dentist', 'service'])
+            ->latest('created_at')
+            ->take(8)
             ->get();
 
-        $dentists = User::where('role', 'dentist')->get();
-        $services = Service::all();
-        $patients = User::where('role', 'patient')->get();
+        // 4. Pending / Needs follow-up appointments
+        $pendingAppointments = Appointment::with(['patient', 'dentist', 'service'])
+            ->where('status', 'pending')
+            ->whereDate('appointment_date', '>=', $today)
+            ->orderBy('appointment_date', 'asc')
+            ->orderBy('start_time', 'asc')
+            ->take(6)
+            ->get();
 
-        $stats = [
-            'today_total' => Appointment::whereDate('appointment_date', now()->toDateString())->count(),
-            'today_confirmed' => Appointment::whereDate('appointment_date', now()->toDateString())->where('status', 'confirmed')->count(),
-            'today_completed' => Appointment::whereDate('appointment_date', now()->toDateString())->where('status', 'completed')->count(),
-            'total_patients' => User::where('role', 'patient')->count(),
-        ];
+        // 5. Active Doctors and Services for quick reference
+        $dentists = User::where('role', 'dentist')->orderBy('name')->get();
+        $services = Service::orderBy('name')->get();
 
         return view('receptionist.dashboard', compact(
+            'stats',
             'dailyAppointments',
-            'recentAppointments',
+            'latestAppointments',
+            'pendingAppointments',
             'selectedDate',
             'dentists',
             'services',
-            'patients',
-            'stats'
+            'today'
         ));
     }
 }
