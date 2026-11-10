@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\PatientController;
 use App\Http\Controllers\Admin\ServiceController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\WebsiteManagementController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
@@ -22,8 +23,17 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Public Landing Page
+// Public Multi-Page Website Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/about', [HomeController::class, 'about'])->name('about');
+Route::get('/services', [HomeController::class, 'services'])->name('services.index');
+Route::get('/services/{service}', [HomeController::class, 'serviceDetail'])->name('services.show');
+Route::get('/doctors', [HomeController::class, 'doctors'])->name('doctors.index');
+Route::get('/doctors/{doctor}', [HomeController::class, 'doctorDetail'])->name('doctors.show');
+Route::get('/appointments/book', [HomeController::class, 'bookAppointment'])->name('appointments.book');
+Route::post('/appointments/book', [HomeController::class, 'storeAppointment'])->name('appointments.book.store');
+Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
+Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit');
 
 // Central Authenticated Dashboard Route (Redirects based on user role)
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -120,6 +130,39 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->as('admin.')->group(
     });
 
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+
+    // 5. Website Management (CMS)
+    Route::prefix('website')->as('website.')->group(function () {
+        Route::get('/', [WebsiteManagementController::class, 'identity'])->name('index');
+        Route::get('/identity', [WebsiteManagementController::class, 'identity'])->name('identity');
+        Route::post('/identity', [WebsiteManagementController::class, 'updateIdentity'])->name('identity.update');
+
+        Route::get('/sections', [WebsiteManagementController::class, 'sections'])->name('sections');
+        Route::match(['post', 'put'], '/sections/{section}', [WebsiteManagementController::class, 'updateSection'])->name('sections.update');
+        Route::match(['post', 'patch'], '/sections/{section}/toggle', [WebsiteManagementController::class, 'toggleSection'])->name('sections.toggle');
+
+        Route::get('/about', [WebsiteManagementController::class, 'about'])->name('about');
+        Route::post('/about', [WebsiteManagementController::class, 'updateAbout'])->name('about.update');
+
+        Route::get('/services', [WebsiteManagementController::class, 'services'])->name('services');
+        Route::match(['post', 'patch'], '/services/{service}', [WebsiteManagementController::class, 'updateServiceVisibility'])->name('services.visibility');
+
+        Route::get('/doctors', [WebsiteManagementController::class, 'doctors'])->name('doctors');
+        Route::match(['post', 'patch'], '/doctors/{doctor}', [WebsiteManagementController::class, 'updateDoctorVisibility'])->name('doctors.visibility');
+
+        Route::get('/testimonials', [WebsiteManagementController::class, 'testimonials'])->name('testimonials');
+        Route::post('/testimonials', [WebsiteManagementController::class, 'storeTestimonial'])->name('testimonials.store');
+        Route::put('/testimonials/{testimonial}', [WebsiteManagementController::class, 'updateTestimonial'])->name('testimonials.update');
+        Route::delete('/testimonials/{testimonial}', [WebsiteManagementController::class, 'destroyTestimonial'])->name('testimonials.destroy');
+
+        Route::get('/faqs', [WebsiteManagementController::class, 'faqs'])->name('faqs');
+        Route::post('/faqs', [WebsiteManagementController::class, 'storeFaq'])->name('faqs.store');
+        Route::put('/faqs/{faq}', [WebsiteManagementController::class, 'updateFaq'])->name('faqs.update');
+        Route::delete('/faqs/{faq}', [WebsiteManagementController::class, 'destroyFaq'])->name('faqs.destroy');
+
+        Route::get('/seo', [WebsiteManagementController::class, 'seo'])->name('seo');
+        Route::post('/seo', [WebsiteManagementController::class, 'updateSeo'])->name('seo.update');
+    });
 
     // Live Search (AJAX)
     Route::get('/search', [AdminDashboardController::class, 'search'])->name('search');

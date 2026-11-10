@@ -114,7 +114,7 @@
                     <input type="date" 
                            name="appointment_date" 
                            id="appointment_date" 
-                           value="{{ old('appointment_date', date('Y-m-d')) }}" 
+                           value="{{ old('appointment_date', $defaultDate ?? date('Y-m-d')) }}" 
                            required
                            class="w-full text-xs font-bold rounded-xl border border-slate-200 p-3.5 bg-slate-50 focus:bg-white focus:border-[#1E40AF] focus:ring-2 focus:ring-[#1E40AF]/15 outline-none transition @error('appointment_date') border-rose-300 bg-rose-50/30 @enderror">
 

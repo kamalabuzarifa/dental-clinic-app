@@ -25,6 +25,11 @@ class User extends Authenticatable
         'phone',
         'role',
         'is_active',
+        'show_on_website',
+        'specialty',
+        'bio',
+        'avatar',
+        'sort_order',
         'password',
     ];
 
@@ -47,9 +52,23 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
+            'show_on_website'   => 'boolean',
+            'sort_order'        => 'integer',
         ];
+    }
+
+    /**
+     * Scope for active dentists displayed on public website.
+     */
+    public function scopeActiveDentistsForWebsite(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('role', 'dentist')
+                     ->where('is_active', true)
+                     ->where('show_on_website', true)
+                     ->orderBy('sort_order', 'asc')
+                     ->orderBy('name', 'asc');
     }
 
     /**

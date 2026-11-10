@@ -6,21 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
     /**
-     * Display a listing of appointments.
+     * Display a listing of appointments with both Table and 100% dynamic Calendar view.
      */
     public function index(Request $request)
     {
         $selectedDate = $request->query('date');
         $selectedDoctor = $request->query('doctor_id');
         $selectedStatus = $request->query('status');
+        $currentTab = $request->query('tab', 'table');
 
-        $doctors = User::where('role', 'dentist')->get();
+        $doctors = User::where('role', 'dentist')->orderBy('name')->get();
 
+        // 1. Paginated appointments for the Table list (with real relationships)
         $appointments = Appointment::with(['patient', 'dentist', 'service'])
             ->when($selectedDate, fn($q) => $q->whereDate('appointment_date', $selectedDate))
             ->when($selectedDoctor, fn($q) => $q->where('dentist_id', $selectedDoctor))
@@ -30,25 +33,127 @@ class AppointmentController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        // 2. Dynamic Calendar Period Calculation
+        $now = now();
+        $year = (int) $request->query('year', $selectedDate ? date('Y', strtotime($selectedDate)) : $now->year);
+        $month = (int) $request->query('month', $selectedDate ? date('m', strtotime($selectedDate)) : $now->month);
+
+        if ($month < 1 || $month > 12) {
+            $month = $now->month;
+        }
+        if ($year < 2000 || $year > 2100) {
+            $year = $now->year;
+        }
+
+        $currentMonthDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $prevMonthDate = $currentMonthDate->copy()->subMonth();
+        $nextMonthDate = $currentMonthDate->copy()->addMonth();
+
+        $startOfMonth = $currentMonthDate->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $currentMonthDate->copy()->endOfMonth()->toDateString();
+
+        // 3. Retrieve REAL appointments from database for the month (no mock/fake data)
+        $monthAppointmentsCollection = Appointment::with([
+                'patient:id,name,phone,email',
+                'dentist:id,name',
+                'service:id,name,price,duration_minutes',
+            ])
+            ->whereBetween('appointment_date', [$startOfMonth, $endOfMonth])
+            ->when($selectedDoctor, fn($q) => $q->where('dentist_id', $selectedDoctor))
+            ->when($selectedStatus, fn($q) => $q->where('status', $selectedStatus))
+            ->orderBy('appointment_date')
+            ->orderBy('start_time')
+            ->get();
+
+        $calendarGrouped = $monthAppointmentsCollection->groupBy(function ($item) {
+            return $item->appointment_date instanceof \DateTimeInterface
+                ? $item->appointment_date->format('Y-m-d')
+                : substr((string) $item->appointment_date, 0, 10);
+        });
+
+        // 4. Build Calendar Days Matrix (Saturday to Friday in Arabic/RTL week)
+        $dayOfWeek = $currentMonthDate->dayOfWeek; // Sunday = 0, Saturday = 6
+        $blankDaysCount = ($dayOfWeek + 1) % 7; // Saturday = 0 blank days
+
+        $daysInMonth = $currentMonthDate->daysInMonth;
+        $calendarDays = [];
+
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+            $dayList = $calendarGrouped->get($dateStr, collect());
+
+            $calendarDays[] = [
+                'dayNumber'    => $d,
+                'date'         => $dateStr,
+                'isToday'      => ($dateStr === $now->toDateString()),
+                'isSelected'   => ($selectedDate === $dateStr),
+                'total'        => $dayList->count(),
+                'confirmed'    => $dayList->where('status', 'confirmed')->count(),
+                'pending'      => $dayList->where('status', 'pending')->count(),
+                'completed'    => $dayList->where('status', 'completed')->count(),
+                'cancelled'    => $dayList->where('status', 'cancelled')->count(),
+                'appointments' => $dayList->values()->map(fn($a) => [
+                    'id'               => $a->id,
+                    'patient_name'     => $a->patient?->name ?? 'غير محدد',
+                    'patient_phone'    => $a->patient?->phone ?? '',
+                    'dentist_name'     => $a->dentist?->name ?? 'غير محدد',
+                    'service_name'     => $a->service?->name ?? 'غير محدد',
+                    'service_price'    => (float) ($a->service?->price ?? 0),
+                    'duration_minutes' => (int) ($a->service?->duration_minutes ?? 30),
+                    'start_time'       => date('h:i A', strtotime($a->start_time)),
+                    'end_time'         => date('h:i A', strtotime($a->end_time)),
+                    'status'           => $a->status,
+                    'notes'            => $a->notes,
+                    'edit_url'         => route('admin.appointments.edit', $a),
+                    'destroy_url'      => route('admin.appointments.destroy', $a),
+                    'status_url'       => route('admin.appointments.status', $a),
+                ])->toArray(),
+            ];
+        }
+
+        // 5. Month Summary Counters (all strictly from real DB collection)
+        $monthTotalAppointments = $monthAppointmentsCollection->count();
+        $monthConfirmedCount = $monthAppointmentsCollection->where('status', 'confirmed')->count();
+        $monthPendingCount = $monthAppointmentsCollection->where('status', 'pending')->count();
+        $monthCompletedCount = $monthAppointmentsCollection->where('status', 'completed')->count();
+        $monthCancelledCount = $monthAppointmentsCollection->where('status', 'cancelled')->count();
+
+        $monthNameArabic = $currentMonthDate->locale('ar')->translatedFormat('F Y');
+
         return view('admin.appointments.index', compact(
             'appointments',
             'doctors',
             'selectedDate',
             'selectedDoctor',
-            'selectedStatus'
+            'selectedStatus',
+            'currentTab',
+            'year',
+            'month',
+            'currentMonthDate',
+            'prevMonthDate',
+            'nextMonthDate',
+            'monthNameArabic',
+            'blankDaysCount',
+            'calendarDays',
+            'monthTotalAppointments',
+            'monthConfirmedCount',
+            'monthPendingCount',
+            'monthCompletedCount',
+            'monthCancelledCount'
         ));
     }
 
     /**
      * Show the form for creating a new appointment.
      */
-    public function create()
+    public function create(Request $request)
     {
+        $defaultDate = $request->query('date', date('Y-m-d'));
         $patients = User::where('role', 'patient')->orderBy('name')->get();
         $doctors = User::where('role', 'dentist')->orderBy('name')->get();
         $services = Service::orderBy('name')->get();
 
-        return view('admin.appointments.create', compact('patients', 'doctors', 'services'));
+        return view('admin.appointments.create', compact('patients', 'doctors', 'services', 'defaultDate'));
     }
 
     /**
@@ -81,6 +186,7 @@ class AppointmentController extends Controller
         $exists = Appointment::where('dentist_id', $validated['dentist_id'])
             ->whereDate('appointment_date', $validated['appointment_date'])
             ->where('start_time', $validated['start_time'])
+            ->whereNotIn('status', ['cancelled'])
             ->exists();
 
         if ($exists) {

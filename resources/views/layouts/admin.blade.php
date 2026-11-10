@@ -142,6 +142,38 @@
                 }
             };
         }
+
+        function websiteDropdown(isRouteActive) {
+            return {
+                isRouteActive: isRouteActive,
+                pinnedOpen: isRouteActive,
+                isHovered: false,
+                get isOpen() {
+                    return this.pinnedOpen || this.isHovered || this.isRouteActive;
+                },
+                onMouseEnter() {
+                    this.isHovered = true;
+                },
+                onMouseLeave() {
+                    this.isHovered = false;
+                },
+                toggleClick() {
+                    if (this.isOpen) {
+                        this.pinnedOpen = false;
+                        this.isHovered = false;
+                        this.isRouteActive = false;
+                    } else {
+                        this.pinnedOpen = true;
+                    }
+                },
+                handleClickOutside() {
+                    if (!this.isRouteActive) {
+                        this.pinnedOpen = false;
+                        this.isHovered = false;
+                    }
+                }
+            };
+        }
     </script>
 
     <style>
@@ -376,7 +408,96 @@
                         <span x-show="!sidebarCollapsed" class="whitespace-nowrap">التقارير والإحصائيات</span>
                     </a>
 
-                    <!-- 7. الإعدادات (Dropdown / Submenu in Expanded, Direct Action in Collapsed) -->
+                    <!-- 7. إدارة الموقع الإلكتروني (Website CMS) -->
+                    <div class="relative" 
+                         x-data="websiteDropdown({{ request()->routeIs('admin.website.*') ? 'true' : 'false' }})"
+                         @mouseenter="sidebarCollapsed ? showTooltip($el, 'إدارة الموقع الإلكتروني') : onMouseEnter()"
+                         @mouseleave="sidebarCollapsed ? hideTooltip() : onMouseLeave()"
+                         @focus="sidebarCollapsed ? showTooltip($el, 'إدارة الموقع الإلكتروني') : null"
+                         @blur="sidebarCollapsed ? hideTooltip() : null"
+                         @click.outside="handleClickOutside()">
+
+                        <button type="button"
+                                @click="if (sidebarCollapsed) { window.location.href = '{{ route('admin.website.identity') }}'; } else { toggleClick(); }"
+                                class="w-full flex items-center rounded-2xl font-bold transition duration-200 {{ request()->routeIs('admin.website.*') ? 'bg-blue-800/60 text-white border-r-4 border-[#87A96B] shadow-inner' : 'text-blue-200 hover:bg-blue-800/40 hover:text-white' }}"
+                                :class="sidebarCollapsed ? 'justify-center p-3 text-center' : 'justify-between px-3.5 py-3 text-xs'">
+                            <div class="flex items-center overflow-hidden"
+                                 :class="sidebarCollapsed ? 'justify-center' : 'space-x-3.5 space-x-reverse'">
+                                <svg class="w-5 h-5 flex-shrink-0 {{ request()->routeIs('admin.website.*') ? 'text-[#87A96B]' : 'text-blue-300' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                </svg>
+                                <span x-show="!sidebarCollapsed" class="whitespace-nowrap">إدارة الموقع الإلكتروني</span>
+                            </div>
+
+                            <svg x-show="!sidebarCollapsed"
+                                 class="w-4 h-4 text-blue-300 transition-transform duration-200 flex-shrink-0"
+                                 :class="{ '-rotate-90': isOpen }"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+
+                        <div x-show="!sidebarCollapsed && isOpen"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-2"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 -translate-y-2"
+                             class="pr-5 mt-1 space-y-1 overflow-hidden"
+                             style="display: none;">
+                            
+                            <a href="{{ route('admin.website.identity') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.identity') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">🏥</span>
+                                <span class="truncate">هوية المركز والشعار</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.sections') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.sections*') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">📑</span>
+                                <span class="truncate">أقسام الرئيسية</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.about') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.about') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">📖</span>
+                                <span class="truncate">صفحة من نحن</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.services') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.services') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">🩺</span>
+                                <span class="truncate">عرض الخدمات</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.doctors') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.doctors') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">👨‍⚕️</span>
+                                <span class="truncate">عرض الأطباء</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.testimonials') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.testimonials*') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">⭐</span>
+                                <span class="truncate">آراء وتقييمات المرضى</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.faqs') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.faqs*') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">❓</span>
+                                <span class="truncate">الأسئلة الشائعة</span>
+                            </a>
+
+                            <a href="{{ route('admin.website.seo') }}"
+                               class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-bold transition duration-150 {{ request()->routeIs('admin.website.seo') ? 'bg-[#87A96B] text-white shadow-sm' : 'text-blue-200 hover:text-white hover:bg-blue-800/40' }}">
+                                <span class="text-xs">🔍</span>
+                                <span class="truncate">محركات البحث (SEO)</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 8. الإعدادات (Dropdown / Submenu in Expanded, Direct Action in Collapsed) -->
                     <div class="relative" 
                          x-data="settingsDropdown({{ request()->routeIs('admin.settings.*') ? 'true' : 'false' }})"
                          @mouseenter="sidebarCollapsed ? showTooltip($el, 'إعدادات النظام') : onMouseEnter()"

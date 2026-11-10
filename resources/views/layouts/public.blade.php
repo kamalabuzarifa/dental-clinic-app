@@ -3,10 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', ($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان') . ' | الرعاية الطبية المتقدمة والابتسامة المشرقة')</title>
+    <title>@yield('title', $seo['title'] ?? (($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان') . ' | الرعاية الطبية المتقدمة والابتسامة المشرقة'))</title>
 
-    <meta name="description" content="@yield('meta_description', 'مركز ريادة لطب وجراحة وتجميل الأسنان - بيئة علاجية مريحة ومجهزة بأحدث التقنيات الرقمية المتقدمة ونظام حجز إلكتروني مؤكد بالدقيقة.')">
+    <meta name="description" content="@yield('meta_description', $seo['description'] ?? 'مركز ريادة لطب وجراحة وتجميل الأسنان - بيئة علاجية مريحة ومجهزة بأحدث التقنيات الرقمية المتقدمة ونظام حجز إلكتروني مؤكد بالدقيقة.')">
+    <meta name="keywords" content="@yield('meta_keywords', $seo['keywords'] ?? 'طب أسنان, زراعة أسنان, تقويم أسنان, تبييض أسنان, غزة, عيادة أسنان')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
+
+    @if(!empty($settings['clinic_favicon']) && \Illuminate\Support\Facades\Storage::disk('public')->exists($settings['clinic_favicon']))
+        <link rel="icon" type="image/png" href="{{ asset('storage/' . $settings['clinic_favicon']) }}">
+    @else
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    @endif
 
     <!-- Open Graph / Meta -->
     <meta property="og:type" content="website">

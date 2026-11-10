@@ -20,7 +20,7 @@
                     {{ $settings['clinic_name'] ?? 'مركز ريادة لطب الأسنان' }}
                 </span>
                 <span class="text-[10px] text-[#87A96B] font-extrabold tracking-widest uppercase block -mt-0.5">
-                    RIYADA DENTAL CARE
+                    {{ $settings['clinic_name_en'] ?? 'RIYADA DENTAL CARE' }}
                 </span>
             </div>
         </a>

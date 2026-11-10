@@ -1,7 +1,8 @@
 @extends('layouts.public')
 
-@section('title', $service->name . ' | ' . ($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان'))
-@section('meta_description', 'تعرف على تفاصيل خدمة ' . $service->name . ' في مركز ريادة لطب الأسنان، خطوات العلاج، الأسعار المعتمدة، ومدة الجلسة مع إمكانية الحجز المباشر المؤكد.')
+@section('title', $seo['title'] ?? ($service->name . ' | ' . ($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان')))
+@section('meta_description', $seo['description'] ?? ('تعرف على تفاصيل خدمة ' . $service->name . ' في مركز ريادة لطب الأسنان، خطوات العلاج، الأسعار المعتمدة، ومدة الجلسة مع إمكانية الحجز المباشر المؤكد.'))
+@section('meta_keywords', $seo['keywords'] ?? ($service->name . ', خدمات طب الأسنان, مركز ريادة'))
 @section('canonical', route('services.show', $service->id))
 
 @section('content')

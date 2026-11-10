@@ -20,12 +20,12 @@
                     @endif
                     <div>
                         <span class="text-lg font-black text-white block">{{ $settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان' }}</span>
-                        <span class="text-[11px] text-[#87A96B] font-extrabold uppercase tracking-wider block">RIYADA DENTAL CARE</span>
+                        <span class="text-[11px] text-[#87A96B] font-extrabold uppercase tracking-wider block">{{ $settings['clinic_name_en'] ?? 'RIYADA DENTAL CARE' }}</span>
                     </div>
                 </div>
 
                 <p class="text-xs text-blue-200 leading-relaxed">
-                    مركز رائد ومتخصص في تقديم أرقى علاجات وجراحات وتجميل الأسنان، مجهز بأحدث أجهزة التصوير ثلاثي الأبعاد وتقنيات التعقيم العالمية لتجربة علاجية بلا قلق.
+                    {{ $settings['clinic_description'] ?? 'مركز رائد ومتخصص في تقديم أرقى علاجات وجراحات وتجميل الأسنان بأحدث التقنيات الرقمية المتقدمة.' }}
                 </p>
 
                 <div class="pt-2">
@@ -86,8 +86,8 @@
                     </p>
                     <div class="p-3.5 rounded-2xl bg-blue-900/60 border border-blue-800/80 space-y-2">
                         <div class="flex items-center justify-between font-bold text-white">
-                            <span>السبت - الخميس:</span>
-                            <span class="text-[#87A96B]">09:00 ص - 09:00 م</span>
+                            <span>ساعات الدوام المعتمدة:</span>
+                            <span class="text-[#87A96B]">{{ $workingHoursText ?? '09:00 ص - 09:00 م' }}</span>
                         </div>
                         <div class="flex items-center justify-between font-bold text-slate-300 border-t border-blue-800/60 pt-1.5">
                             <span>الجمعة:</span>

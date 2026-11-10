@@ -50,9 +50,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         /**
-         * View Composer: inject persistent database notifications into admin layout.
+         * View Composer: inject persistent database notifications into admin and receptionist layouts.
          */
-        View::composer('layouts.admin', function ($view) {
+        View::composer(['layouts.admin', 'layouts.receptionist'], function ($view) {
             if (auth()->check()) {
                 try {
                     $user = auth()->user();
@@ -62,13 +62,17 @@ class AppServiceProvider extends ServiceProvider
 
                     $dbNotifications = $user->notifications()->take(10)->get();
 
-                    $formattedNotifications = $dbNotifications->map(function ($n) {
+                    $defaultLink = $user->role === 'receptionist'
+                        ? route('receptionist.appointments.index')
+                        : route('admin.appointments.index');
+
+                    $formattedNotifications = $dbNotifications->map(function ($n) use ($defaultLink) {
                         $data = $n->data;
                         return [
                             'id'      => (string) $n->id,
                             'title'   => $data['title'] ?? 'إشعار إداري',
                             'message' => $data['message'] ?? '',
-                            'link'    => $data['link'] ?? route('admin.appointments.index'),
+                            'link'    => $data['link'] ?? $defaultLink,
                             'date'    => $n->created_at ? $n->created_at->diffForHumans() : 'الآن',
                             'read'    => !is_null($n->read_at),
                             'type'    => $data['icon'] ?? 'appointment',

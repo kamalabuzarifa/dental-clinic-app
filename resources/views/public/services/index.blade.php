@@ -1,7 +1,8 @@
 @extends('layouts.public')
 
-@section('title', 'الخدمات الطبية والتجميلية | ' . ($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان'))
-@section('meta_description', 'استكشف باقة الخدمات السريرية والتجميلية المتقدمة في مركز ريادة لطب الأسنان: الكشف العام، تبييض الليزر، حشو العصب، تقويم وزراعة الأسنان، بأسعار واضحة وجودة معتمدة.')
+@section('title', $seo['title'] ?? ('الخدمات الطبية والتجميلية | ' . ($settings['clinic_name'] ?? 'مركز ريادة لطب وجراحة الأسنان')))
+@section('meta_description', $seo['description'] ?? 'استكشف باقة الخدمات السريرية والتجميلية المتقدمة في مركز ريادة لطب الأسنان: الكشف العام، تبييض الليزر، حشو العصب، تقويم وزراعة الأسنان، بأسعار واضحة وجودة معتمدة.')
+@section('meta_keywords', $seo['keywords'] ?? 'خدمات طب الأسنان, حشو تجميلي, علاج عصب, تبييض ليزر')
 @section('canonical', route('services.index'))
 
 @section('content')
@@ -42,7 +43,7 @@
                         <div>
                             <div class="flex items-center justify-between mb-6">
                                 <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-lg group-hover:bg-blue-700 group-hover:text-white transition duration-300 shadow-xs">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    <span>{{ $service->icon ?: '🦷' }}</span>
                                 </div>
                                 <span class="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
                                     {{ $service->duration_minutes }} دقيقة
